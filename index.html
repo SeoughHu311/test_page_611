@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>교실 방탈출</title>
+    <style>
+        /* 기본 스타일 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            font-family: 'Malgun Gothic', sans-serif;
+            overflow: hidden; /* 스크롤 방지 */
+        }
+
+        /* 게임 화면 컨테이너 */
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 1000px; /* 데스크탑 최대 너비 */
+            max-height: 750px; /* 데스크탑 최대 높이 */
+            margin: auto;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        #background-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* 이미지가 비율에 맞게 조절되도록 */
+        }
+
+        /* 터치 가능한 오브젝트들의 공통 스타일 */
+        .clickable-object {
+            position: absolute;
+            cursor: pointer;
+            /* 개발 중 위치 확인용: border: 2px dashed yellow; */
+        }
+
+        /* 각 오브젝트 위치 및 크기 (%로 지정하여 반응형 대응) */
+        #chalkboard { top: 25%; left: 30%; width: 25%; height: 25%; }
+        #clock      { top: 10%; left: 80%; width: 12%; height: 18%; }
+        #computer   { top: 60%; left: 65%; width: 15%; height: 15%; }
+        #drawer     { top: 70%; left: 45%; width: 18%; height: 10%; }
+        #door       { top: 20%; left: 5%; width: 15%; height: 60%; }
+
+        /* 모달 (팝업창) 스타일 */
+        .modal {
+            display: none; /* 평소에는 숨김 */
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            padding: 25px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 400px;
+            text-align: center;
+            border-radius: 10px;
+            font-size: 1.2rem;
+        }
+
+        /* 인벤토리 스타일 */
+        #inventory {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- 배경 이미지 -->
+        <img id="background-image" src="image.jpg" alt="교실 배경">
+
+        <!-- 터치할 오브젝트들 -->
+        <div class="clickable-object" id="chalkboard"></div>
+        <div class="clickable-object" id="clock"></div>
+        <div class="clickable-object" id="computer"></div>
+        <div class="clickable-object" id="drawer"></div>
+        <div class="clickable-object" id="door"></div>
+    </div>
+
+    <!-- 힌트 및 메시지를 보여줄 모달 -->
+    <div id="message-modal" class="modal">
+        <div class="modal-content" id="modal-text">
+            <!-- 메시지가 여기에 표시됩니다 -->
+        </div>
+    </div>
+    
+    <!-- 획득한 아이템을 표시할 인벤토리 -->
+    <div id="inventory">인벤토리: (비어있음)</div>
+
+    <script>
+        // 게임 상태 변수
+        let hasKey = false;
+
+        // HTML 요소 가져오기
+        const chalkboard = document.getElementById('chalkboard');
+        const clock = document.getElementById('clock');
+        const computer = document.getElementById('computer');
+        const drawer = document.getElementById('drawer');
+        const door = document.getElementById('door');
+        const modal = document.getElementById('message-modal');
+        const modalText = document.getElementById('modal-text');
+        const inventory = document.getElementById('inventory');
+
+        // 모달을 보여주는 함수
+        function showModal(message) {
+            modalText.textContent = message;
+            modal.style.display = 'flex';
+        }
+
+        // 모달을 닫는 함수
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+        modal.addEventListener('click', closeModal); // 모달의 아무 곳이나 클릭하면 닫힘
+
+        // 각 오브젝트에 클릭(터치) 이벤트 리스너 추가
+        chalkboard.addEventListener('click', () => {
+            showModal("칠판에 '25 x 16 = ?' 라고 쓰여 있다.");
+        });
+
+        clock.addEventListener('click', () => {
+            showModal("멈춘 시계가 9시 30분을 가리키고 있다.");
+        });
+
+        computer.addEventListener('click', () => {
+            showModal("컴퓨터 화면에 메시지가 있다: '마지막 두 자리는 '아이맥 G3'의 출시년도'");
+        });
+
+        drawer.addEventListener('click', () => {
+            if (hasKey) {
+                showModal("서랍은 비어있다.");
+                return;
+            }
+            
+            const answer = prompt("서랍이 잠겨있다. 4자리 비밀번호를 입력하세요.");
+            if (answer === "4998") {
+                showModal("딸깍! 서랍이 열리며 [교실 열쇠]를 얻었다!");
+                hasKey = true;
+                inventory.textContent = "인벤토리: 교실 열쇠 🔑";
+            } else if (answer) { // 사용자가 취소를 누르지 않았을 때
+                showModal("비밀번호가 틀렸다.");
+            }
+        });
+
+        door.addEventListener('click', () => {
+            if (hasKey) {
+                // 게임 클리어
+                alert("철컥! 문을 열고 탈출에 성공했다!");
+                // (선택) 게임을 처음부터 다시 시작하게 할 수 있습니다.
+                // location.reload(); 
+            } else {
+                showModal("문이 잠겨있다. 열쇠가 필요하다.");
+            }
+        });
+    </script>
+
+</body>
+</html>
